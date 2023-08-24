@@ -6,7 +6,7 @@
 <h2>PARTE 01</h2>
 <p>Atualizar a implementação dos sitema bancário, para armazenar os dados de clientes e contas bancárias em OBJETIOS ao invés de dicionários. O código deve seguir o moldelo de classes UML a seguir:</p>
 <br>
-<p>imagem da UML</p>
+<img src="/img/UML desafio banco.png">
 <br>
 <h3>DICAS E CONSIDERAÇÕES:</h3>
 <p>- Considerar atributos publicos e privados</p>
