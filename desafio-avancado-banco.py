@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod, abstractproperty
+from abc import ABC, ABCMeta, abstractclassmethod, abstractproperty
 from datetime import datetime
 
 
@@ -22,12 +22,14 @@ class PessoaFisica(Cliente):
         self.cpf = cpf
 
 class Conta:
+    
     def __init__(self, numero, cliente):
         self._saldo = 0
         self._numero = numero
         self._agencia = "0001"
         self._cliente = cliente
-        #self._historico = Historico()
+        self._numero_de_saques = 0
+        self._historico = Historico()
     
     @classmethod
     def nova_conta(cls, cliente, numero):
@@ -51,40 +53,113 @@ class Conta:
     
     @property
     def historico(self):
-        #return self._historico
-        pass
-    
-    def sacar(self, valor):
-        pass
+        return self._historico
         
+    @property
+    def numero_de_saques(self):
+        return self._numero_de_saques
+           
+    def funcao_saque(self, valor):
+        saldo = self.saldo
+        
+        if valor > saldo:
+            print("Saldo insuficiente")
+        elif valor == 0 or valor < 0:
+            print("Saque nao realizado, valor digitado foi 0 ou insuficiente")
+        else:
+            self._saldo -= valor
+            retornar_menu = input("Saque realizado com sucesso!! Pressione qualque tecla para voltar ao menu")
+        return saldo, Historico   
 
-def funcao_deposito(saldo, valor, lista_depositos):
-    if valor == 0:
-        print("O Valor do deposito nao pode ser menor que zero")
-    else:      
-        saldo += valor
-        lista_depositos += f"\nR$ {valor:.2f}"
-        retornar_menu = input("Deposito realizado com sucesso!!, pressione qualquer tecla para voltar ao menu")
-        return saldo, lista_depositos
+    def funcao_deposito(self, valor):
+        if valor == 0:
+            print("O Valor do deposito nao pode ser menor que zero")
+        else:      
+            self.saldo += valor
+            retornar_menu = input("Deposito realizado com sucesso!!, pressione qualquer tecla para voltar ao menu")
+            return self.saldo, Historico
     
-def funcao_saque(*, saldo, saque, lista_saques, limite, numero_de_saques, limite_diario ):
+class ContaCorrente(Conta):
+    def __init__(self, numero, cliente, limite_saque=500, limite_diario=3):
+        super().__init__(numero, cliente)
+        self.limite_saque = limite_saque
+        self.limite_diario = limite_diario
+
+    def funcao_saque(self, valor):
+        numero_de_saques = len([transacao for transacao in self.historico.transacoes if transacao["tipo"] == Saque.__name__])
+        excedeu_numero_saques = numero_de_saques >= self.limite_diario
+        excedeu_limite_conta = valor > self.limite_saque
+        
+        if excedeu_numero_saques:
+            print("\nNão foi possivel realizar a operação, limite de numero de saques atingido")
+        
+        elif excedeu_limite_conta:
+            print(f"\nNão foi possivel sacar, valor maximo de saque é de: R$ {float(self.limite_saque)} por saque")
+        
+        else:
+            return super().funcao_saque(valor)
+        
+        return False
+    def __str__(self):
+        return f"""\
+            Agência: \t{self.agencia}
+            C/C:\t {self.numero}
+            Titular:\t {self.cliente.nome}"""
+
+class Historico:
+    def __init__(self):
+        self._transacoes = []
     
-    excedeu_numero_saques = numero_de_saques >= limite_diario
+    @property
+    def transacoes(self):
+        return self._transacoes
     
-    if saque > saldo:
-        print("Saldo insuficiente")
-    elif saque == 0 or saque < 0:
-        print("Saque nao realizado, valor digitado foi 0 ou insuficiente")
-    elif excedeu_numero_saques:
-        print("Não foi possivel realizar a operação, limite de numero de saques atingido")
-    elif saque > limite:
-        print(f"Não foi possivel sacar, valor maximo de saque é de: R$ {float(limite)} por saque")
-    else:
-        saldo -= saque
-        lista_saques += f"\nR$ {saque:.2f}"
-        numero_de_saques += 1
-        retornar_menu = input("Saque realizado com sucesso!! Pressione qualque tecla para voltar ao menu")
-    return saldo, lista_saques
+    def adicionar_transacao(self, transacao):
+        self._transacoes.append(
+            {
+                "tipo": transacao.__class__.__nome__,
+                "valor": transacao.valor,
+                "data": datetime.now().strftime("%d-%m-%Y %H:%M:%s"),
+            }
+        )
+
+class Transacao(ABC):
+    @property
+    @abstractproperty
+    def valor(self):
+        pass
+    
+    @abstractclassmethod
+    def registrar(self, conta):
+        pass
+
+class Saque(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
+
+    @property
+    def valor(self):
+        return self._valor
+    
+    def registrar(self, conta):
+        sucesso_transacao = conta.funcao_saque(self.valor)
+        
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)
+        
+class Deposito(Transacao):
+    def __init__(self, valor):
+        self._valor = valor
+
+    @property
+    def valor(self):
+        return self._valor
+    
+    def registrar(self, conta):
+        sucesso_transacao = conta.funcao_deposito(self.valor)
+        
+        if sucesso_transacao:
+            conta.historico.adicionar_transacao(self)
 
 def funcao_extrato(saldo, lista_depositos, lista_saques):
     print("""
@@ -138,13 +213,14 @@ def main():
     AGENCIA = "0001"
     proxima_conta = 1
     conta = 0
-    
+    numero_de_saques = 0
+    LIMITE_SAQUE = 3
     saldo = 0
     depositos_realizados = ""
     saques_realizados = ""
-    numero_de_saques = 0
+    
     limite_saque = 500
-    LIMITE_SAQUE = 3
+    
 
     while True:
 
