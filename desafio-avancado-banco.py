@@ -161,6 +161,39 @@ class Deposito(Transacao):
         if sucesso_transacao:
             conta.historico.adicionar_transacao(self)
 
+def criar_cliente(lista_clientes):
+
+
+
+def criar_conta(agencia, conta, lista_usuario):
+    
+    cpf = input("Digite o CPF: ")
+    for usuario in lista_usuario:
+        if usuario['CPF'] == cpf:
+            print("\nA Conta foi criada com sucesso!")
+            return {"agencia": agencia, "numero_conta": conta, "usuario": usuario}
+        else:
+            print("Usuário não encontrado")
+
+def buscar_cliente(cpf, lista_clientes):
+    cliente_encontrado = [cliente for cliente in lista_clientes if cliente.cpf == cpf]
+    return cliente_encontrado
+
+def buscar_conta(cliente):
+    conta_encontrada = [conta for conta in lista_contas if conta.cliente == cliente]
+    return conta_encontrada
+
+def funcao_depositar(lista_clientes):
+    cpf = input("Digite o CPF do cliente: ")
+    cliente = buscar_cliente(cpf, lista_clientes)
+    
+    if cliente:
+        valor = float(input("Digite o valor do depósito: "))
+        transacao = Deposito(valor)
+        conta = buscar_conta(cliente)
+        
+#def cliente_buscado(self, )
+
 def funcao_extrato(saldo, lista_depositos, lista_saques):
     print("""
         ---------- Extrato ----------""")
@@ -171,7 +204,7 @@ def funcao_extrato(saldo, lista_depositos, lista_saques):
     retornar_menu = input("\nTecle enter para retornar ao menu inicial")
     return saldo, lista_depositos, lista_saques
 
-def criar_usuario(lista_usuario):
+
     
     cpf = input("Digite o CPF: ")
     for usuario in lista_usuario:
@@ -197,19 +230,11 @@ def criar_usuario(lista_usuario):
     return usuario
     retornar_menu = input("\nCadastro realizado com sucesso! Tecle enter para retornar ao menu inicial")
 
-def criar_conta(agencia, conta, lista_usuario):
-    
-    cpf = input("Digite o CPF: ")
-    for usuario in lista_usuario:
-        if usuario['CPF'] == cpf:
-            print("\nA Conta foi criada com sucesso!")
-            return {"agencia": agencia, "numero_conta": conta, "usuario": usuario}
-        else:
-            print("Usuário não encontrado")
+
    
 def main():
     lista_contas = [] # agencia, numero da conta e usuário. numero sequencial iniciando com 1
-    lista_usuario = [] # nome, data de nascimento, cpf e end(str no formato: logradouro - bairro - ceidade/sigla estado) sem duplicidade.
+    lista_clientes = [] # nome, data de nascimento, cpf e end(str no formato: logradouro - bairro - ceidade/sigla estado) sem duplicidade.
     AGENCIA = "0001"
     proxima_conta = 1
     conta = 0
@@ -267,14 +292,21 @@ def main():
             retornar_menu = input("\nTecle enter para retornar ao menu inicial")
 
         elif opcao == "d":
-            deposito = float(input("Opcao depósito selecionada, quanto deseja depositar na conta?: "))
-            saldo, depositos_realizados = funcao_deposito(saldo, deposito, depositos_realizados)
+            
+            cliente_buscado = buscar_cliente(cpf, lista_clientes)
+            if cliente_buscado:
+                valor = input(float("\nDigite o valor do depósito: "))
+                transacao = Deposito(valor)
+            else:
+                print("\nCliente não encontrado!")
+                return
+                
         
         elif opcao == "s":
 
-            saque = float(input("Digite quanto deseja sacar: ?\n"))
-            saldo, saques_realizados = funcao_saque(saldo=saldo, saque=saque, lista_saques=saques_realizados, limite=limite_saque, numero_de_saques=numero_de_saques, limite_diario=LIMITE_SAQUE)
-            numero_de_saques += 1
+            funcao_saque(input("Digite quanto deseja sacar: ?\n"))
+            #saldo, saques_realizados = funcao_saque(saldo=saldo, saque=saque, lista_saques=saques_realizados, limite=limite_saque, numero_de_saques=numero_de_saques, limite_diario=LIMITE_SAQUE)
+            #numero_de_saques += 1
             
         elif opcao == "e":
             saldo, depositos_realizados, saques_realizados = funcao_extrato(saldo, lista_depositos=depositos_realizados, lista_saques=saques_realizados)
