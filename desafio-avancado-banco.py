@@ -6,13 +6,13 @@ class Cliente:
 
     def __init__(self, endereco):
         self.endereco = endereco
-        self.contas = []
+        self.lista_contas = []
     
     def realizar_transacao(self, conta, transacao):
         transacao.registrar(conta)
     
     def adicionar_conta(self, conta):
-        self.contas.append(conta)
+        self.lista_contas.append(conta)
 
 class PessoaFisica(Cliente):
     def __init__(self, nome, data_nascimento, cpf, endereco):
@@ -75,8 +75,8 @@ class Conta:
         if valor == 0:
             print("O Valor do deposito nao pode ser menor que zero")
         else:      
-            self.saldo += valor
-            retornar_menu = input("Deposito realizado com sucesso!!, pressione qualquer tecla para voltar ao menu")
+            self._saldo += valor
+            print("Deposito realizado com sucesso!!")
             return self.saldo, Historico
     
 class ContaCorrente(Conta):
@@ -117,9 +117,10 @@ class Historico:
     def adicionar_transacao(self, transacao):
         self._transacoes.append(
             {
-                "tipo": transacao.__class__.__nome__,
+                "tipo": transacao.__class__.__name__,
                 "valor": transacao.valor,
-                "data": datetime.now().strftime("%d-%m-%Y %H:%M:%s"),
+                "data": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                
             }
         )
 
@@ -162,47 +163,107 @@ class Deposito(Transacao):
             conta.historico.adicionar_transacao(self)
 
 def criar_cliente(lista_clientes):
+    cpf = input("Informe o CPF: ")
+    cliente = buscar_cliente(cpf, lista_clientes)
+    
+    if cliente:
+        print("Ja existe um cliente com este CPF")
+        return
+    
+    nome = input("Informe o nome completo do cliente: ")
+    data_nascimento = input("Informe a data de nascimento: ")
+    endereco = input("Informe o endereco:")
+    
+    cliente = PessoaFisica(nome=nome, data_nascimento=data_nascimento, cpf=cpf, endereco=endereco)
+    lista_clientes.append(cliente)
+    
+    print("cliente adicionado com sucesso")
 
-
-
-def criar_conta(agencia, conta, lista_usuario):
+def criar_conta(numero_conta, lista_contas, lista_clientes):
     
     cpf = input("Digite o CPF: ")
-    for usuario in lista_usuario:
-        if usuario['CPF'] == cpf:
-            print("\nA Conta foi criada com sucesso!")
-            return {"agencia": agencia, "numero_conta": conta, "usuario": usuario}
-        else:
-            print("Usuário não encontrado")
-
+    cliente = buscar_cliente(cpf, lista_clientes)
+    
+    if not cliente:
+        print("\nCliente não encontrado")
+        return
+    
+    conta = ContaCorrente.nova_conta(cliente=cliente, numero=numero_conta)
+    lista_contas.append(conta)
+    cliente.lista_contas.append(conta)
+    
+    print("Conta criada com sucesso!")
+    
 def buscar_cliente(cpf, lista_clientes):
-    cliente_encontrado = [cliente for cliente in lista_clientes if cliente.cpf == cpf]
-    return cliente_encontrado
+    for cliente in lista_clientes:
+        if cliente.cpf == cpf:
+            return cliente
+        return None
+    #cliente_encontrado = [cliente for cliente in lista_clientes if cliente.cpf == cpf]
+    #return cliente_encontrado[0] if cliente_encontrado else None
 
-def buscar_conta(cliente):
-    conta_encontrada = [conta for conta in lista_contas if conta.cliente == cliente]
-    return conta_encontrada
+def buscar_conta(lista_clientes):
+    if not lista_clientes.lista_contas:
+        print("Cliente  nao possui conta")
+        return
+    return lista_clientes.lista_contas[0]
 
 def funcao_depositar(lista_clientes):
     cpf = input("Digite o CPF do cliente: ")
     cliente = buscar_cliente(cpf, lista_clientes)
     
-    if cliente:
-        valor = float(input("Digite o valor do depósito: "))
-        transacao = Deposito(valor)
-        conta = buscar_conta(cliente)
+    if not cliente:
+        print(" Cliente não encontrado")
+        return
+    
+    valor = float(input("Digite o valor do depósito: "))
+    transacao = Deposito(valor)
+    conta = buscar_conta(cliente)
         
-#def cliente_buscado(self, )
-
-def funcao_extrato(saldo, lista_depositos, lista_saques):
+    if not conta:
+        print("Conta nao encontrada")
+        return
+    
+    cliente.realizar_transacao(conta, transacao)
+        
+def funcao_sacar(lista_clientes):
+    cpf = input("Digite o CPF do cliente: ")
+    cliente = buscar_cliente(cpf, lista_clientes)
+    
+    if cliente:
+        valor = float(input("Digite o valor do saque: "))
+        transacao = Saque(valor)
+        conta = buscar_conta(cliente)
+        cliente.realizar_transacao(conta, transacao)
+    else:
+        print("Cliente não encontrado")
+    
+def funcao_extrato(lista_clientes):
+    cpf = input("Informe o CPF do cliente: ")
+    cliente = buscar_cliente(cpf, lista_clientes)
+    
+    if not cliente:
+        print("Cliente não encontrado!!")
+        return
+    conta = buscar_conta(cliente)
+    if not conta:
+        return
+    
     print("""
         ---------- Extrato ----------""")
-    print("Depositos realizados: ", (lista_depositos))
-    print("Saques realizados: ", (lista_saques))
-    print("O Saldo da conta é:", (saldo))
+    transacoes = conta.historico.transacoes
+    extrato = ""
+    if not transacoes:
+        extrato = "Nenhuma transacão foi encontrada"
+    else:
+        for transacao in transacoes:
+            extrato += f"{transacao['tipo']}:R${transacao['valor']:.2f}"
+            
+    print(extrato)
+    print(f"O Saldo da conta é: {conta.saldo:.2f}")
     
     retornar_menu = input("\nTecle enter para retornar ao menu inicial")
-    return saldo, lista_depositos, lista_saques
+    return
 
 
     
@@ -230,22 +291,14 @@ def funcao_extrato(saldo, lista_depositos, lista_saques):
     return usuario
     retornar_menu = input("\nCadastro realizado com sucesso! Tecle enter para retornar ao menu inicial")
 
-
+def listar_contas(lista_contas):
+    for conta in lista_contas:
+        print((str(conta)))
+    
    
 def main():
     lista_contas = [] # agencia, numero da conta e usuário. numero sequencial iniciando com 1
     lista_clientes = [] # nome, data de nascimento, cpf e end(str no formato: logradouro - bairro - ceidade/sigla estado) sem duplicidade.
-    AGENCIA = "0001"
-    proxima_conta = 1
-    conta = 0
-    numero_de_saques = 0
-    LIMITE_SAQUE = 3
-    saldo = 0
-    depositos_realizados = ""
-    saques_realizados = ""
-    
-    limite_saque = 500
-    
 
     while True:
 
@@ -269,47 +322,41 @@ def main():
         opcao = input()
         
         if opcao == "cc":
-            conta += 1
-            nova_conta = criar_conta(AGENCIA, conta, lista_usuario)
-            lista_contas.append(nova_conta)
+            numero_conta = len(lista_contas) + 1
+            criar_conta(numero_conta, lista_contas, lista_clientes)
             
         elif opcao == "c":
-           criar_usuario(lista_usuario)
+           criar_cliente(lista_clientes)
            
         elif opcao == "l":
             
             print("""======= Usuários Cadastrados =======""")
-            for novo_usuario in lista_usuario:
+            for novo_usuario in lista_clientes:
                 print(f"{novo_usuario}\n")
             
             retornar_menu = input("\nTecle enter para retornar ao menu inicial")
 
         elif opcao == "lc":
-            print("""======= Contas Cadastradas =======""")
-            for nova_conta in lista_contas:
-                print(f"{nova_conta}\n")
-            
-            retornar_menu = input("\nTecle enter para retornar ao menu inicial")
+           listar_contas(lista_contas)
 
         elif opcao == "d":
-            
-            cliente_buscado = buscar_cliente(cpf, lista_clientes)
+            funcao_depositar(lista_clientes)
+            """ cliente_buscado = buscar_cliente(cpf, lista_clientes)
             if cliente_buscado:
                 valor = input(float("\nDigite o valor do depósito: "))
                 transacao = Deposito(valor)
             else:
                 print("\nCliente não encontrado!")
-                return
+                return """
                 
-        
         elif opcao == "s":
 
-            funcao_saque(input("Digite quanto deseja sacar: ?\n"))
+            funcao_sacar(lista_clientes)
             #saldo, saques_realizados = funcao_saque(saldo=saldo, saque=saque, lista_saques=saques_realizados, limite=limite_saque, numero_de_saques=numero_de_saques, limite_diario=LIMITE_SAQUE)
             #numero_de_saques += 1
             
         elif opcao == "e":
-            saldo, depositos_realizados, saques_realizados = funcao_extrato(saldo, lista_depositos=depositos_realizados, lista_saques=saques_realizados)
+            funcao_extrato(lista_clientes)
                   
         elif opcao == "q":
 
