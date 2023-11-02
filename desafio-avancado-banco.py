@@ -265,10 +265,8 @@ def funcao_extrato(lista_clientes):
     retornar_menu = input("\nTecle enter para retornar ao menu inicial")
     return
 
-
-    
     cpf = input("Digite o CPF: ")
-    for usuario in lista_usuario:
+    for usuario in lista_clientes:
         if usuario['CPF'] == cpf:
             print("\nJa existe um usuario com esse cpf")
             return
@@ -287,15 +285,17 @@ def funcao_extrato(lista_clientes):
         'CPF': cpf,
         'Endereço': [endereco_formatado] 
         }
-    lista_usuario.append(usuario)
+    lista_clientes.append(usuario)
     return usuario
     retornar_menu = input("\nCadastro realizado com sucesso! Tecle enter para retornar ao menu inicial")
 
 def listar_contas(lista_contas):
     for conta in lista_contas:
-        print((str(conta)))
-    
-   
+        if not conta in lista_contas:
+            print("Conta nao encontrada")
+        else:
+            print((str(conta)))
+        
 def main():
     lista_contas = [] # agencia, numero da conta e usuário. numero sequencial iniciando com 1
     lista_clientes = [] # nome, data de nascimento, cpf e end(str no formato: logradouro - bairro - ceidade/sigla estado) sem duplicidade.
@@ -332,7 +332,7 @@ def main():
             
             print("""======= Usuários Cadastrados =======""")
             for novo_usuario in lista_clientes:
-                print(f"{novo_usuario}\n")
+                print(f"{novo_usuario.nome}\n")
             
             retornar_menu = input("\nTecle enter para retornar ao menu inicial")
 
